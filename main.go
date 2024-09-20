@@ -99,12 +99,9 @@ func (cfg *config) crawlPage(rawCurrentUrl string) {
 		<-cfg.concurrencyControl
 	}()
 	cfg.concurrencyControl <- struct{}{}
-	cfg.mu.Lock()
-	if len(cfg.pages) >= cfg.maxPages {
-		cfg.mu.Unlock()
+	if cfg.getPagesLen() >= cfg.maxPages {
 		return
 	}
-	cfg.mu.Unlock()
 	currentUrl, err := url.Parse(rawCurrentUrl)
 
 	if err != nil {
@@ -128,6 +125,12 @@ func (cfg *config) crawlPage(rawCurrentUrl string) {
 		go cfg.crawlPage(url)
 	}
 }
+func (cfg *config) getPagesLen() int {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+	return len(cfg.pages)
+}
+
 func (cfg *config) addPageVisit(normalizedUrl string) (isFirst bool) {
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
